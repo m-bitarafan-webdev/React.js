@@ -39,6 +39,11 @@ const App = () => {
     setEditingIndex(null); //clear the index of edit
     setEditedText(''); // clear the editing field
   }
+  //adding the cancel-edit feature
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditedText('');
+  };
   //binding the value of the input field with the state
   return (
     <div>
@@ -65,6 +70,7 @@ const App = () => {
                   onChange={(e) => setEditedText(e.target.value)}
                 />
                 <button onClick={() => saveTodo(todo.id)}>Save</button>
+                <button onClick={cancelEdit}>Cancel</button>
                 </>
               ) : (
                 <>
