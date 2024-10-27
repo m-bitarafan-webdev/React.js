@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 //Here I imported the React module and the useState hook from the base react folder to use.
 //App component and the return statement alongside the title was created
 const App = () => {
@@ -7,6 +7,9 @@ const App = () => {
   //a state of todo list was set and a function to update it was defined by the empty array in useState hook
   const [input, setInput] = useState('');
   //adding the input state 
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editedText, setEditedText] = useState("");
+  //defined two state vairables to keep track of editing index and the edited content
   const handleSubmit = (e) => {
     e.preventDefault();
     //Logic to add a new todo
@@ -16,17 +19,26 @@ const App = () => {
     setInput('');
   }
   const deleteTodo = (id) => {
-    //first I set the delete property of the targeted todo item to true not to pass the condition
-    //e.deleteProp = true; seems not working
-    //i filtered an array to return a new one with condition of the delete property being false
+    //using the index of the array of todos, i filtered out the item that is selected and updated todos.
     const updatedTodos = todos.filter((todoItem) => todoItem.id !== id);
     //updating the todo list
-
     setTodos(updatedTodos);
   }
-  useEffect(() => {
-    console.log("Current todos:", todos);
-  }, [todos])
+  const editTodo = (id) => {
+    //setting the index on the targeted item to edit
+    const todoToEdit = todos.find((todo) => todo.id === id)
+    setEditingIndex(id);
+    setEditedText(todoToEdit.text); //pre-fill the field with the current text
+  }
+  //setting the proper index of a todo to edit
+  const saveTodo = (id) => {
+    //maping the edited ones and adding them to the list
+    const editedTodos = todos.map((todo) => 
+    todo.id === id ? { ...todo, text: editedText} : todo)
+    setTodos(editedTodos); //update the todo list with edited ones
+    setEditingIndex(null); //clear the index of edit
+    setEditedText(''); // clear the editing field
+  }
   //binding the value of the input field with the state
   return (
     <div>
@@ -43,10 +55,26 @@ const App = () => {
       </form>
       <ul>
         {todos.map(todo => (
-          <li key={todo.id}>
-            {todo.text}
-            <button onClick={() => deleteTodo(todo.id)}>Delete</button>
-          </li>
+          <div>
+            <li key={todo.id}>
+              {editingIndex === todo.id ? (
+                <>
+                <input
+                  type='text'
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                />
+                <button onClick={() => saveTodo(todo.id)}>Save</button>
+                </>
+              ) : (
+                <>
+                {todo.text}
+                <button onClick={() => deleteTodo(todo.id)}>Delete</button>
+                <button onClick={() => editTodo(todo.id)}>Edit</button>
+                </>
+              )}
+            </li>
+          </div>
         ))}
       </ul>
     </div>
@@ -61,3 +89,6 @@ export default App;
 //Nice changes have made and now I wanna push it to Github
 //Second commit: this time I don't know how to connect the input section value to that of the todo object
 //binded the input value to the li items successfully using useState for input
+//created the delete button to remove the items from list by using the array method of filter and referring to the index
+//editing feature added to the functionality
+//tags of input and save/edit buttons added as a contiditional rendering
