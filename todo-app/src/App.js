@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 //Here I imported the React module and the useState hook from the base react folder to use.
 //App component and the return statement alongside the title was created
 const App = () => {
   //App component was made and the return statement clarified
   const [todos, setTodos] = useState([]);
   //a state of todo list was set and a function to update it was defined by the empty array in useState hook
+  //adding a useEffect hook to load the stringified JSON from local storage and parse and update the value of todos
+  useEffect(() => {
+    const storedTodos = localStorage.getItem('todos');
+    if(storedTodos) {
+      setTodos(JSON.parse(storedTodos));
+    }
+  }, [])
   const [input, setInput] = useState('');
   //adding the input state 
   const [editingIndex, setEditingIndex] = useState(null);
@@ -16,6 +23,8 @@ const App = () => {
     const newTodo = { id: Date.now(), text:  input ,completed: false };
     //an object of todo instance was made to include the properties related
     setTodos([...todos, newTodo])
+    localStorage.setItem('todos', JSON.stringify(todos));
+    //commiting to memory
     setInput('');
   }
   const deleteTodo = (id) => {
@@ -23,6 +32,8 @@ const App = () => {
     const updatedTodos = todos.filter((todoItem) => todoItem.id !== id);
     //updating the todo list
     setTodos(updatedTodos);
+    localStorage.setItem('todos', JSON.stringify(updatedTodos));
+    //commiting deleted ones to memory
   }
   const editTodo = (id) => {
     //setting the index on the targeted item to edit
@@ -38,16 +49,36 @@ const App = () => {
     setTodos(editedTodos); //update the todo list with edited ones
     setEditingIndex(null); //clear the index of edit
     setEditedText(''); // clear the editing field
+    localStorage.setItem('todos', JSON.stringify(editedTodos));
+    //commiting the edited ones
   }
   //adding the cancel-edit feature
   const cancelEdit = () => {
     setEditingIndex(null);
     setEditedText('');
   };
+  //adding a reset function to clear the todos
+  const resetTodos = () => {
+    setTodos([]);
+    //clearing the set
+    localStorage.removeItem('todos');
+    //also removing the list from the memory
+  }
+  //defining the completion status function
+  const toggleCompletion = (id) => {
+    const toggledTodos = todos.map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    )
+    //mapping over todos to find the toggled ones and changing the value
+    setTodos(toggledTodos);
+    localStorage.setItem('todos', JSON.stringify(toggledTodos));
+    //updating the list and commiting to memory
+  }
   //binding the value of the input field with the state
   return (
     <div>
       <h1>Todo App</h1>
+      <button onClick={resetTodos}>Clear the list</button>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -62,6 +93,11 @@ const App = () => {
         {todos.map(todo => (
           <div>
             <li key={todo.id}>
+            <input
+              type="checkbox"
+              checked={todo.completed}
+              onChange={() => toggleCompletion(todo.id)}
+            />
               {editingIndex === todo.id ? (
                 <>
                 <input
