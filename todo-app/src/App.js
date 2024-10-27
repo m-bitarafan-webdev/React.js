@@ -5,6 +5,8 @@ const App = () => {
   //App component was made and the return statement clarified
   const [todos, setTodos] = useState([]);
   //a state of todo list was set and a function to update it was defined by the empty array in useState hook
+  //adding a state variable to add a filter feature
+  const [filter, setFilter] = useState('all');
   //adding a useEffect hook to load the stringified JSON from local storage and parse and update the value of todos
   useEffect(() => {
     const storedTodos = localStorage.getItem('todos');
@@ -74,6 +76,12 @@ const App = () => {
     localStorage.setItem('todos', JSON.stringify(toggledTodos));
     //updating the list and commiting to memory
   }
+  //configuring the filtered arrays
+  const filteredTodos = todos.filter(todo => {
+    if (filter === 'completed') return todo.completed;
+    if (filter === 'uncompleted') return !todo.completed;
+    return true;
+  })
   //binding the value of the input field with the state
   return (
     <div>
@@ -89,8 +97,13 @@ const App = () => {
         />
         <button type="submit">Add</button>
       </form>
+      <select onChange={(e) => setFilter(e.target.value)}>
+        <option value="all">All</option>
+        <option value="completed">Completed</option>
+        <option value="uncompleted">Uncompleted</option>
+      </select>
       <ul>
-        {todos.map(todo => (
+        {filteredTodos.map(todo => (
           <div>
             <li key={todo.id}>
             <input
@@ -134,3 +147,5 @@ export default App;
 //created the delete button to remove the items from list by using the array method of filter and referring to the index
 //editing feature added to the functionality
 //tags of input and save/edit buttons added as a contiditional rendering
+//local storing and completion status added
+//filtering feature added
