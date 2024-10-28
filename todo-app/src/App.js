@@ -7,6 +7,9 @@ const App = () => {
   //a state of todo list was set and a function to update it was defined by the empty array in useState hook
   //adding a state variable to add a filter feature
   const [filter, setFilter] = useState('all');
+  //adding a new state to keep track of date and time
+  const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
   //adding a useEffect hook to load the stringified JSON from local storage and parse and update the value of todos
   useEffect(() => {
     const storedTodos = localStorage.getItem('todos');
@@ -22,7 +25,7 @@ const App = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     //Logic to add a new todo
-    const newTodo = { id: Date.now(), text:  input ,completed: false };
+    const newTodo = { id: Date.now(), text:  input ,completed: false, dueDate: dueDate, dueTime: dueTime };
     //an object of todo instance was made to include the properties related
     setTodos([...todos, newTodo])
     localStorage.setItem('todos', JSON.stringify(todos));
@@ -95,6 +98,16 @@ const App = () => {
           placeholder="What to-do next?"
           required
         />
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
+        <input
+          type="time"
+          value={dueTime}
+          onChange={(e) => setDueTime(e.target.value)}
+        />
         <button type="submit">Add</button>
       </form>
       <select onChange={(e) => setFilter(e.target.value)}>
@@ -124,6 +137,12 @@ const App = () => {
               ) : (
                 <>
                 {todo.text}
+                {todo.dueDate && (
+                  <p>Due Date: {todo.dueDate}</p>
+                )}
+                {todo.dueTime && (
+                  <p>Due Time: {todo.dueTime}</p>
+                )}
                 <button onClick={() => deleteTodo(todo.id)}>Delete</button>
                 <button onClick={() => editTodo(todo.id)}>Edit</button>
                 </>
@@ -149,3 +168,4 @@ export default App;
 //tags of input and save/edit buttons added as a contiditional rendering
 //local storing and completion status added
 //filtering feature added
+//added due time and date feature
