@@ -10,6 +10,8 @@ const App = () => {
   //adding a new state to keep track of date and time
   const [dueDate, setDueDate] = useState('');
   const [dueTime, setDueTime] = useState('');
+  //adding a new state to define prioroty
+  const [priority, setPriority] = useState('');
   //adding a useEffect hook to load the stringified JSON from local storage and parse and update the value of todos
   useEffect(() => {
     const storedTodos = localStorage.getItem('todos');
@@ -25,7 +27,7 @@ const App = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     //Logic to add a new todo
-    const newTodo = { id: Date.now(), text:  input ,completed: false, dueDate: dueDate, dueTime: dueTime };
+    const newTodo = { id: Date.now(), text:  input ,completed: false, dueDate: dueDate, dueTime: dueTime, priorityStatus: priority };
     //an object of todo instance was made to include the properties related
     setTodos([...todos, newTodo])
     localStorage.setItem('todos', JSON.stringify(todos));
@@ -50,7 +52,7 @@ const App = () => {
   const saveTodo = (id) => {
     //maping the edited ones and adding them to the list
     const editedTodos = todos.map((todo) => 
-    todo.id === id ? { ...todo, text: editedText} : todo)
+    todo.id === id ? { ...todo, text: editedText, completed: todo.completed, dueDate: dueDate, dueTime: dueTime, priorityStatus: priority } : todo)
     setTodos(editedTodos); //update the todo list with edited ones
     setEditingIndex(null); //clear the index of edit
     setEditedText(''); // clear the editing field
@@ -108,6 +110,13 @@ const App = () => {
           value={dueTime}
           onChange={(e) => setDueTime(e.target.value)}
         />
+        <label>Set the priority</label>
+        <select onChange={(e) => setPriority(e.target.value)}>
+          <option value={null}>None</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
         <button type="submit">Add</button>
       </form>
       <select onChange={(e) => setFilter(e.target.value)}>
@@ -131,6 +140,23 @@ const App = () => {
                   value={editedText}
                   onChange={(e) => setEditedText(e.target.value)}
                 />
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+                <input
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
+                />
+                <label>Set the priority</label>
+                <select onChange={(e) => setPriority(e.target.value)}>
+                  <option value={null}>None</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
                 <button onClick={() => saveTodo(todo.id)}>Save</button>
                 <button onClick={cancelEdit}>Cancel</button>
                 </>
@@ -142,6 +168,9 @@ const App = () => {
                 )}
                 {todo.dueTime && (
                   <p>Due Time: {todo.dueTime}</p>
+                )}
+                {todo.priorityStatus && (
+                  <p>Priority: {todo.priorityStatus}</p>
                 )}
                 <button onClick={() => deleteTodo(todo.id)}>Delete</button>
                 <button onClick={() => editTodo(todo.id)}>Edit</button>
@@ -169,3 +198,4 @@ export default App;
 //local storing and completion status added
 //filtering feature added
 //added due time and date feature
+//added priority level feature
