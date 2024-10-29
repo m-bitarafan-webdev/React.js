@@ -12,6 +12,10 @@ const App = () => {
   const [dueTime, setDueTime] = useState('');
   //adding a new state to define prioroty
   const [priority, setPriority] = useState('');
+  //adding a state for tags
+  const [newTag, setNewTag] = useState("");
+  //adding a selected tag state to filter based on the tags
+  const [selectedTags, setSelectedTag] = useState([]);
   //adding a useEffect hook to load the stringified JSON from local storage and parse and update the value of todos
   useEffect(() => {
     const storedTodos = localStorage.getItem('todos');
@@ -26,13 +30,24 @@ const App = () => {
   //defined two state vairables to keep track of editing index and the edited content
   const handleSubmit = (e) => {
     e.preventDefault();
+    //binding priority state to ensure the save
+    setPriority(priority);
     //Logic to add a new todo
-    const newTodo = { id: Date.now(), text:  input ,completed: false, dueDate: dueDate, dueTime: dueTime, priorityStatus: priority };
+    const newTodo = { 
+      id: Date.now(), 
+      text:  input , 
+      completed: false, 
+      dueDate: dueDate, 
+      dueTime: dueTime, 
+      priorityStatus: priority, 
+      tagList: [] 
+    };
     //an object of todo instance was made to include the properties related
     setTodos([...todos, newTodo])
     localStorage.setItem('todos', JSON.stringify(todos));
     //commiting to memory
-    setInput('');
+    setInput('');    
+    setPriority('None');
   }
   const deleteTodo = (id) => {
     //using the index of the array of todos, i filtered out the item that is selected and updated todos.
@@ -50,9 +65,18 @@ const App = () => {
   }
   //setting the proper index of a todo to edit
   const saveTodo = (id) => {
+    //binding priority state to ensure the save
+    setPriority(priority);
     //maping the edited ones and adding them to the list
     const editedTodos = todos.map((todo) => 
-    todo.id === id ? { ...todo, text: editedText, completed: todo.completed, dueDate: dueDate, dueTime: dueTime, priorityStatus: priority } : todo)
+    todo.id === id ? { 
+      ...todo, 
+      text: editedText, 
+      completed: todo.completed, 
+      dueDate: dueDate, 
+      dueTime: dueTime, 
+      priorityStatus: priority, 
+    } : todo)
     setTodos(editedTodos); //update the todo list with edited ones
     setEditingIndex(null); //clear the index of edit
     setEditedText(''); // clear the editing field
@@ -85,8 +109,32 @@ const App = () => {
   const filteredTodos = todos.filter(todo => {
     if (filter === 'completed') return todo.completed;
     if (filter === 'uncompleted') return !todo.completed;
+    if (selectedTags.length !== 0) {
+      return selectedTags.some(tag => todo.tagList.includes(tag));
+    }
     return true;
   })
+  //taglist creation
+  const addTag = (todoID) => {
+    if (newTag.trim()){
+      setTodos((prevTodos) => 
+        prevTodos.map((todo) => 
+        todo.id === todoID ? {...todo, tagList: [...todo.tagList, newTag]} : todo
+      ));
+      setNewTag("");
+    }
+  }
+  //tag remove function
+  const removeTag = (todoID, tagToRemove) => {
+    setTodos(todos.map((todo) => 
+      todo.id === todoID ? { ...todo, tagList: todo.tagList.filter((tag) => tag !== tagToRemove )} : todo
+    ));
+  }
+  //adding tag filter function
+  const toggleTag = (tag) => {
+    setSelectedTag((prev) => 
+    prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+  )}
   //binding the value of the input field with the state
   return (
     <div>
@@ -112,7 +160,7 @@ const App = () => {
         />
         <label>Set the priority</label>
         <select onChange={(e) => setPriority(e.target.value)}>
-          <option value={null}>None</option>
+          <option value="None">None</option>
           <option value="High">High</option>
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
@@ -151,8 +199,8 @@ const App = () => {
                   onChange={(e) => setDueTime(e.target.value)}
                 />
                 <label>Set the priority</label>
-                <select onChange={(e) => setPriority(e.target.value)}>
-                  <option value={null}>None</option>
+                <select value={priority}  onChange={(e) => setPriority(e.target.value)}>
+                  <option value="None">None</option>
                   <option value="High">High</option>
                   <option value="Medium">Medium</option>
                   <option value="Low">Low</option>
@@ -174,6 +222,22 @@ const App = () => {
                 )}
                 <button onClick={() => deleteTodo(todo.id)}>Delete</button>
                 <button onClick={() => editTodo(todo.id)}>Edit</button>
+                <div>
+                  {todo.tagList.map((tag, index) => (
+                    <span key={index}
+                    onClick={() => toggleTag(tag)}>
+                      {tag}
+                      <button onClick={() => removeTag(todo.id, tag)}>Remove Tag</button>
+                    </span>
+                  ))}
+                </div>
+                <input
+                  type='text'
+                  value={newTag}
+                  placeholder='Add a tag: Work, Personal, ...'
+                  onChange={(e) => setNewTag(e.target.value)}
+                />
+                <button onClick={() => addTag(todo.id)}>Add a Tag</button>
                 </>
               )}
             </li>
@@ -199,3 +263,5 @@ export default App;
 //filtering feature added
 //added due time and date feature
 //added priority level feature
+//minor bugs fixed in priority level
+//tag creation and sorting added
