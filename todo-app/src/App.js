@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import './App.css';
 //Here I imported the React module and the useState hook from the base react folder to use.
 //App component and the return statement alongside the title was created
 const App = () => {
@@ -16,18 +17,40 @@ const App = () => {
   const [newTag, setNewTag] = useState("");
   //adding a selected tag state to filter based on the tags
   const [selectedTags, setSelectedTag] = useState([]);
+  //adding a new state to keep track of want-to-get-tagged to-do item
+  const [toEditTag, setToEditTag] = useState(null);
   //adding a useEffect hook to load the stringified JSON from local storage and parse and update the value of todos
   useEffect(() => {
     const storedTodos = localStorage.getItem('todos');
-    if(storedTodos) {
-      setTodos(JSON.parse(storedTodos));
+    if (storedTodos) {
+      setTodos(JSON.parse(storedTodos).map(todo => ({
+        ...todo,
+        reminder: todo.reminder ? new Date(todo.reminder) : null
+      })));
     }
-  }, [])
+  }, []);  
   const [input, setInput] = useState('');
   //adding the input state 
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedText, setEditedText] = useState("");
   //defined two state vairables to keep track of editing index and the edited content
+  //using useEffect to bind the reminder feature
+  useEffect(() => {
+    const timeOuts = [];
+  
+    todos.forEach((todo) => {
+      if (todo.reminder && todo.reminder instanceof Date && todo.reminder.getTime() > Date.now()) {
+        const reminderTime = todo.reminder.getTime() - Date.now();
+        const timeOutID = setTimeout(() => {
+          alert(`Reminder: ${todo.text}`);
+        }, reminderTime);
+        timeOuts.push(timeOutID);
+      }
+    });
+  
+    return () => timeOuts.forEach((timeOutID) => clearTimeout(timeOutID));
+  }, [todos]);
+  
   const handleSubmit = (e) => {
     e.preventDefault();
     //binding priority state to ensure the save
@@ -40,7 +63,8 @@ const App = () => {
       dueDate: dueDate, 
       dueTime: dueTime, 
       priorityStatus: priority, 
-      tagList: [] 
+      tagList: [],
+      reminder: dueDate && dueTime ? new Date (`${dueDate}T${dueTime}`) : null
     };
     //an object of todo instance was made to include the properties related
     setTodos([...todos, newTodo])
@@ -122,11 +146,16 @@ const App = () => {
         todo.id === todoID ? {...todo, tagList: [...todo.tagList, newTag]} : todo
       ));
       setNewTag("");
+      setToEditTag(null);
     }
+  }
+  //to hide/show the input field for tags
+  const showTagInput = (todoID) => {
+    setToEditTag(todoID);
   }
   //tag remove function
   const removeTag = (todoID, tagToRemove) => {
-    setTodos(todos.map((todo) => 
+    setTodos((prevTodos) => prevTodos.map((todo) => 
       todo.id === todoID ? { ...todo, tagList: todo.tagList.filter((tag) => tag !== tagToRemove )} : todo
     ));
   }
@@ -211,13 +240,16 @@ const App = () => {
               ) : (
                 <>
                 {todo.text}
+                {todo.reminder && (
+                  <p>Reminder: {todo.reminder.toLocaleString()}</p>
+                )}
                 {todo.dueDate && (
                   <p>Due Date: {todo.dueDate}</p>
                 )}
                 {todo.dueTime && (
                   <p>Due Time: {todo.dueTime}</p>
                 )}
-                {todo.priorityStatus && (
+                {todo.priorityStatus && todo.priorityStatus !== 'None' && (
                   <p>Priority: {todo.priorityStatus}</p>
                 )}
                 <button onClick={() => deleteTodo(todo.id)}>Delete</button>
@@ -225,19 +257,23 @@ const App = () => {
                 <div>
                   {todo.tagList.map((tag, index) => (
                     <span key={index}
-                    onClick={() => toggleTag(tag)}>
+                    onClick={() => toggleTag(tag)}
+                    style={{cursor: 'pointer', marginRight: '5px', color: selectedTags.includes(tag) ? 'blue' : 'black'}}
+                    >
                       {tag}
-                      <button onClick={() => removeTag(todo.id, tag)}>Remove Tag</button>
+                      <button onClick={(e) => { e.stopPropagation(); removeTag(todo.id, tag);}}>Remove Tag</button>
                     </span>
                   ))}
                 </div>
-                <input
+                {toEditTag === todo.id && (<input
                   type='text'
                   value={newTag}
                   placeholder='Add a tag: Work, Personal, ...'
                   onChange={(e) => setNewTag(e.target.value)}
-                />
-                <button onClick={() => addTag(todo.id)}>Add a Tag</button>
+                />)}
+                <button onClick={() => (toEditTag === todo.id ? addTag(todo.id) : showTagInput(todo.id))}>
+                  {toEditTag === todo.id ? "Add another tag" : "Add a tag"}
+                </button>
                 </>
               )}
             </li>
@@ -265,3 +301,4 @@ export default App;
 //added priority level feature
 //minor bugs fixed in priority level
 //tag creation and sorting added
+//reminder added
