@@ -3,6 +3,8 @@ import './App.css';
 //Here I imported the React module and the useState hook from the base react folder to use.
 //App component and the return statement alongside the title was created
 const App = () => {
+  //defining a state of progress
+  const [progress, setProgress] = useState(0);
   //App component was made and the return statement clarified
   const [todos, setTodos] = useState([]);
   //a state of todo list was set and a function to update it was defined by the empty array in useState hook
@@ -22,6 +24,18 @@ const App = () => {
   //defining states of redo and undo histories
   const [undoHistory, setUndoHistory] = useState([]);
   const [redoHistory, setRedoHistory] = useState([]);
+  
+  //adding a useEffect hook to keep track of progrees
+  useEffect(() => {
+    //adding a function to keep track of progress
+    const progressCheck = () => {
+      const totalTasks = todos.length;
+      const completedTasks = todos.filter((todo) => todo.completed).length;
+      const progressPercentage = totalTasks > 0 ? (completedTasks/totalTasks) * 100 : 0;
+      setProgress(progressPercentage);
+    }
+    progressCheck();
+  } ,[todos])
   //adding a useEffect hook to load the stringified JSON from local storage and parse and update the value of todos
   useEffect(() => {
     const storedTodos = localStorage.getItem('todos');
@@ -208,6 +222,13 @@ const App = () => {
       <button onClick={resetTodos}>Clear the list</button>
       <button onClick={undoChanges} disabled={undoHistory.length === 0}>Undo</button>
       <button onClick={redoChanges} disabled={redoHistory.length === 0}>Redo</button>
+      <div className='progress-bar'>
+        <div className='progress-bar-fill'
+        style={{ width: `${progress}%`}}
+        ></div>
+        <span>{Math.round(progress)}</span>
+      </div>
+
 
       <form onSubmit={handleSubmit}>
         <input
@@ -344,3 +365,4 @@ export default App;
 //reminder added
 //bugs in priority, tags, reminder have been taken care of
 //redo/undo feature added
+//progress tracking added
