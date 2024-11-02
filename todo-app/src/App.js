@@ -24,7 +24,8 @@ const App = () => {
   //defining states of redo and undo histories
   const [undoHistory, setUndoHistory] = useState([]);
   const [redoHistory, setRedoHistory] = useState([]);
-  
+  //adding a state to hold user's search
+  const [searchQuery, setSearchQuery] = useState('');
   //adding a useEffect hook to keep track of progrees
   useEffect(() => {
     //adding a function to keep track of progress
@@ -159,8 +160,13 @@ const App = () => {
     if (selectedTags.length !== 0) {
       return selectedTags.some(tag => todo.tagList.includes(tag));
     }
-    return true;
-  })
+    return (
+      searchQuery === '' || // If there's no search query, include all todos
+      todo.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      todo.tagList.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      todo.priorityStatus.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });  
   //taglist creation
   const addTag = (todoID) => {
     if (newTag.trim()){
@@ -214,11 +220,16 @@ const App = () => {
   }
 
 
-
   //binding the value of the input field with the state
   return (
     <div>
       <h1>Todo App</h1>
+      <input
+      type='text'
+      placeholder='Search to-do items ...'
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      />
       <button onClick={resetTodos}>Clear the list</button>
       <button onClick={undoChanges} disabled={undoHistory.length === 0}>Undo</button>
       <button onClick={redoChanges} disabled={redoHistory.length === 0}>Redo</button>
@@ -366,3 +377,4 @@ export default App;
 //bugs in priority, tags, reminder have been taken care of
 //redo/undo feature added
 //progress tracking added
+//search filter added
