@@ -3,6 +3,8 @@ import './App.css';
 //Here I imported the React module and the useState hook from the base react folder to use.
 //App component and the return statement alongside the title was created
 const App = () => {
+  //defining the state of dark mode
+  const [isDarkMode, setIsDarkMode] = useState(false);
   //defining a state of progress
   const [progress, setProgress] = useState(0);
   //App component was made and the return statement clarified
@@ -220,16 +222,26 @@ const App = () => {
   }
 
 
+  const toggleDarkMode = () => {
+    setIsDarkMode((prevMode) => !prevMode);
+  }
+
+
+
+
+
   //binding the value of the input field with the state
   return (
-    <div>
+    <div id='appContainer' className={isDarkMode ? "dark-mode" : "light-mode"}>
       <h1>Todo App</h1>
       <input
+      id='searchInput'
       type='text'
       placeholder='Search to-do items ...'
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
       />
+      <button onClick={() => toggleDarkMode()}>{isDarkMode ? "Light Mode" : "Dark Mode"}</button>
       <button onClick={resetTodos}>Clear the list</button>
       <button onClick={undoChanges} disabled={undoHistory.length === 0}>Undo</button>
       <button onClick={redoChanges} disabled={redoHistory.length === 0}>Redo</button>
@@ -329,8 +341,8 @@ const App = () => {
                 <div>
                   {todo.tagList.map((tag, index) => (
                     <span key={index}
+                    id='tagStyle'
                     onClick={() => toggleTag(tag)}
-                    style={{cursor: 'pointer', marginRight: '5px', color: selectedTags.includes(tag) ? 'blue' : 'black'}}
                     >
                       {tag}
                       <button onClick={(e) => { e.stopPropagation(); removeTag(todo.id, tag);}}>Remove Tag</button>
@@ -378,3 +390,4 @@ export default App;
 //redo/undo feature added
 //progress tracking added
 //search filter added
+//dark mode added
