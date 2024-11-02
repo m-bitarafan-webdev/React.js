@@ -19,6 +19,9 @@ const App = () => {
   const [selectedTags, setSelectedTag] = useState([]);
   //adding a new state to keep track of want-to-get-tagged to-do item
   const [toEditTag, setToEditTag] = useState(null);
+  //defining states of redo and undo histories
+  const [undoHistory, setUndoHistory] = useState([]);
+  const [redoHistory, setRedoHistory] = useState([]);
   //adding a useEffect hook to load the stringified JSON from local storage and parse and update the value of todos
   useEffect(() => {
     const storedTodos = localStorage.getItem('todos');
@@ -67,7 +70,8 @@ const App = () => {
       reminder: dueDate && dueTime ? new Date (`${dueDate}T${dueTime}`) : null
     };
     //an object of todo instance was made to include the properties related
-    setTodos([...todos, newTodo])
+    setUndoHistory([...undoHistory, todos]);
+    setTodos([...todos, newTodo]);
     localStorage.setItem('todos', JSON.stringify(todos));
     //commiting to memory
     setInput('');    
@@ -77,13 +81,15 @@ const App = () => {
     //using the index of the array of todos, i filtered out the item that is selected and updated todos.
     const updatedTodos = todos.filter((todoItem) => todoItem.id !== id);
     //updating the todo list
+    setUndoHistory([...undoHistory, todos]);
     setTodos(updatedTodos);
     localStorage.setItem('todos', JSON.stringify(updatedTodos));
     //commiting deleted ones to memory
   }
   const editTodo = (id) => {
     //setting the index on the targeted item to edit
-    const todoToEdit = todos.find((todo) => todo.id === id)
+    const todoToEdit = todos.find((todo) => todo.id === id);
+    setUndoHistory([...undoHistory, todos]);
     setEditingIndex(id);
     setEditedText(todoToEdit.text); //pre-fill the field with the current text
   }
@@ -100,7 +106,8 @@ const App = () => {
       dueDate: dueDate, 
       dueTime: dueTime, 
       priorityStatus: priority, 
-    } : todo)
+    } : todo);
+    setUndoHistory([...undoHistory, todos]);
     setTodos(editedTodos); //update the todo list with edited ones
     setEditingIndex(null); //clear the index of edit
     setEditedText(''); // clear the editing field
@@ -117,6 +124,7 @@ const App = () => {
     setTodos([]);
     //clearing the set
     localStorage.removeItem('todos');
+    setUndoHistory([...undoHistory, todos]);
     //also removing the list from the memory
   }
   //defining the completion status function
@@ -125,6 +133,7 @@ const App = () => {
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     )
     //mapping over todos to find the toggled ones and changing the value
+    setUndoHistory([...undoHistory, todos]);
     setTodos(toggledTodos);
     localStorage.setItem('todos', JSON.stringify(toggledTodos));
     //updating the list and commiting to memory
@@ -146,6 +155,7 @@ const App = () => {
         todo.id === todoID ? {...todo, tagList: [...todo.tagList, newTag]} : todo
       ));
       setNewTag("");
+      setUndoHistory([...undoHistory, todos]);
       setToEditTag(null);
     }
   }
@@ -158,17 +168,47 @@ const App = () => {
     setTodos((prevTodos) => prevTodos.map((todo) => 
       todo.id === todoID ? { ...todo, tagList: todo.tagList.filter((tag) => tag !== tagToRemove )} : todo
     ));
+    setUndoHistory([...undoHistory, todos]);
   }
   //adding tag filter function
   const toggleTag = (tag) => {
     setSelectedTag((prev) => 
     prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
   )}
+
+
+  //Adding the undo/redo functions
+  const undoChanges = () => {
+    if (undoHistory.length > 0) {
+      const previousState = undoHistory[undoHistory.length - 1];
+      setRedoHistory([...redoHistory, todos]);
+      setTodos(previousState);
+      setUndoHistory(undoHistory.slice(0, undoHistory.length - 1));
+      localStorage.setItem('todos', JSON.stringify(previousState));
+    }
+  }
+
+
+  const redoChanges = () => {
+    if (redoHistory.length > 0) {
+      const nextState = redoHistory[redoHistory.length - 1];
+      setUndoHistory([...undoHistory, todos]);
+      setTodos(nextState);
+      setRedoHistory(redoHistory.slice(0, redoHistory.length - 1));
+      localStorage.setItem('todos', JSON.stringify(nextState));
+    }
+  }
+
+
+
   //binding the value of the input field with the state
   return (
     <div>
       <h1>Todo App</h1>
       <button onClick={resetTodos}>Clear the list</button>
+      <button onClick={undoChanges} disabled={undoHistory.length === 0}>Undo</button>
+      <button onClick={redoChanges} disabled={redoHistory.length === 0}>Redo</button>
+
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -302,3 +342,5 @@ export default App;
 //minor bugs fixed in priority level
 //tag creation and sorting added
 //reminder added
+//bugs in priority, tags, reminder have been taken care of
+//redo/undo feature added
