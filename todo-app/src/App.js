@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './App.css';
 //Here I imported the React module and the useState hook from the base react folder to use.
 //App component and the return statement alongside the title was created
 const App = () => {
+  //checking the compatability with MediaRecorder API
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert("Sorry, your browser does not support audio recording.")
+  } else {
+    console.log("Audio recording supported.")
+  }
   //defining the state of dark mode
   const [isDarkMode, setIsDarkMode] = useState(false);
   //defining a state of progress
@@ -71,6 +77,69 @@ const App = () => {
     return () => timeOuts.forEach((timeOutID) => clearTimeout(timeOutID));
   }, [todos]);
   
+
+  //attaching audio input to todos
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioURL, setAudioURL] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunkRef = useRef([]);
+
+  //handle start/stop recording
+
+  const handleRecordingToggle = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+    setIsRecording(!isRecording);
+  };
+
+  //start recording
+  const [errorMessage, setErrorMessage] = useState(null);
+  const startRecording = () => {
+    navigator.mediaDevices.getUserMedia( { audio: true })
+      .then((stream) => {
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          audioChunkRef.current.push(event.data);
+        };
+        mediaRecorderRef.current.onstop = () => {
+          const audioBlob = new Blob (audioChunkRef.current, { type: "audio/mp3" });
+          const audioURL = URL.createObjectURL(audioBlob);
+          setAudioURL(audioURL);
+        };
+
+        mediaRecorderRef.current.onerror = (error) => {
+          console.error("Recording error:", error);
+          setErrorMessage("An error occurred while recording audio.");
+        };
+
+        mediaRecorderRef.current.start();
+      })
+      .catch((error) => {
+        console.error("Error accessing microphone:", error);
+        setErrorMessage("Unable to access the microphone. Please check your permissions and try again.");
+      });
+  }
+
+  const stopRecording = () => {
+    try {
+      mediaRecorderRef.current?.stop();
+    } catch (error) {
+      console.error("Error stopping recording:", error);
+      setErrorMessage("An error occurred while stopping the recording.");
+    }
+  };
+
+  const deleteAudio = (id) => {
+    todos.map((todo) => (
+      todo.id === id? {...todo, audio: null} : todo
+    ));
+    audioChunkRef.current.length = 0;
+    setAudioURL(null);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     //binding priority state to ensure the save
@@ -83,6 +152,7 @@ const App = () => {
       dueDate: dueDate, 
       dueTime: dueTime, 
       priorityStatus: priority, 
+      audio: audioURL || null,
       tagList: [],
       reminder: dueDate && dueTime ? new Date (`${dueDate}T${dueTime}`) : null
     };
@@ -92,8 +162,9 @@ const App = () => {
     localStorage.setItem('todos', JSON.stringify(todos));
     //commiting to memory
     setInput('');    
+    setAudioURL(null);
     setPriority('None');
-  }
+  };
   const deleteTodo = (id) => {
     //using the index of the array of todos, i filtered out the item that is selected and updated todos.
     const updatedTodos = todos.filter((todoItem) => todoItem.id !== id);
@@ -122,7 +193,8 @@ const App = () => {
       completed: todo.completed, 
       dueDate: dueDate, 
       dueTime: dueTime, 
-      priorityStatus: priority, 
+      priorityStatus: priority,
+      audio: todo.audio,
     } : todo);
     setUndoHistory([...undoHistory, todos]);
     setTodos(editedTodos); //update the todo list with edited ones
@@ -219,21 +291,21 @@ const App = () => {
       setRedoHistory(redoHistory.slice(0, redoHistory.length - 1));
       localStorage.setItem('todos', JSON.stringify(nextState));
     }
-  }
+  };
 
 
   const toggleDarkMode = () => {
     setIsDarkMode((prevMode) => !prevMode);
-  }
+  };
 
-
-
-
-
+  
+  
+  
   //binding the value of the input field with the state
   return (
     <div id='appContainer' className={isDarkMode ? "dark-mode" : "light-mode"}>
       <h1>Todo App</h1>
+      {errorMessage && <div style={{ color: 'red' }}>{errorMessage}</div>}
       <input
       id='searchInput'
       type='text'
@@ -251,8 +323,11 @@ const App = () => {
         ></div>
         <span>{Math.round(progress)}</span>
       </div>
-
-
+      <select onChange={(e) => setFilter(e.target.value)}>
+        <option value="all">All</option>
+        <option value="completed">Completed</option>
+        <option value="uncompleted">Uncompleted</option>
+      </select>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -261,30 +336,8 @@ const App = () => {
           placeholder="What to-do next?"
           required
         />
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
-        <input
-          type="time"
-          value={dueTime}
-          onChange={(e) => setDueTime(e.target.value)}
-        />
-        <label>Set the priority</label>
-        <select onChange={(e) => setPriority(e.target.value)}>
-          <option value="None">None</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
         <button type="submit">Add</button>
       </form>
-      <select onChange={(e) => setFilter(e.target.value)}>
-        <option value="all">All</option>
-        <option value="completed">Completed</option>
-        <option value="uncompleted">Uncompleted</option>
-      </select>
       <ul>
         {filteredTodos.map(todo => (
           <div>
@@ -311,7 +364,8 @@ const App = () => {
                   value={dueTime}
                   onChange={(e) => setDueTime(e.target.value)}
                 />
-                <label>Set the priority</label>
+
+                <label>Priority</label>
                 <select value={priority}  onChange={(e) => setPriority(e.target.value)}>
                   <option value="None">None</option>
                   <option value="High">High</option>
@@ -324,20 +378,23 @@ const App = () => {
               ) : (
                 <>
                 {todo.text}
-                {todo.reminder && (
-                  <p>Reminder: {todo.reminder.toLocaleString()}</p>
-                )}
+                <button onClick={handleRecordingToggle}>
+                  {isRecording ? '⏹' : '⏺'}
+                </button>
+                {audioURL && <audio controls src={audioURL}></audio>}
+                <button onClick={() => deleteAudio(todo.id)}>❌</button>
                 {todo.dueDate && (
-                  <p>Due Date: {todo.dueDate}</p>
+                  <p>Date: {todo.dueDate}</p>
                 )}
                 {todo.dueTime && (
-                  <p>Due Time: {todo.dueTime}</p>
+                  <p>Time: {todo.dueTime}</p>
                 )}
                 {todo.priorityStatus && todo.priorityStatus !== 'None' && (
                   <p>Priority: {todo.priorityStatus}</p>
                 )}
-                <button onClick={() => deleteTodo(todo.id)}>Delete</button>
-                <button onClick={() => editTodo(todo.id)}>Edit</button>
+                <button onClick={() => deleteTodo(todo.id)}>❌</button>
+                <button onClick={() => editTodo(todo.id)}>📝</button>
+                
                 <div>
                   {todo.tagList.map((tag, index) => (
                     <span key={index}
@@ -345,7 +402,7 @@ const App = () => {
                     onClick={() => toggleTag(tag)}
                     >
                       {tag}
-                      <button onClick={(e) => { e.stopPropagation(); removeTag(todo.id, tag);}}>Remove Tag</button>
+                      <button onClick={(e) => { e.stopPropagation(); removeTag(todo.id, tag);}}>❎</button>
                     </span>
                   ))}
                 </div>
@@ -356,7 +413,7 @@ const App = () => {
                   onChange={(e) => setNewTag(e.target.value)}
                 />)}
                 <button onClick={() => (toEditTag === todo.id ? addTag(todo.id) : showTagInput(todo.id))}>
-                  {toEditTag === todo.id ? "Add another tag" : "Add a tag"}
+                  {toEditTag === todo.id ? "☑" : "✏"}
                 </button>
                 </>
               )}
@@ -391,3 +448,4 @@ export default App;
 //progress tracking added
 //search filter added
 //dark mode added
+//voice input added
